@@ -1,27 +1,36 @@
 #!/bin/bash
 
-
-sudo apt update && sudo apt upgrade -y
-
-sudo apt install -y software-properties-common
-
-
-sudo add-apt-repository -y ppa:deadsnakes/ppa
-
-
+echo "Обновление системы..."
 sudo apt update
+sudo apt upgrade -y
+
+echo "Установка Python 3.10..."
+sudo apt install python3.10 -y
+
+echo "Установка pip для Python 3..."
+sudo apt install python3-pip -y
 
 
-sudo apt install -y python3.10 python3.10-full
+echo "Установка русского языка..."
+sudo apt install language-pack-ru -y
 
 
-wget https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py
+echo "Генерация локали для русского языка..."
+sudo locale-gen ru_RU.UTF-8
 
 
-python3.10 /tmp/get-pip.py
+echo "Установка локали по умолчанию..."
+sudo update-locale LANG=ru_RU.UTF-8
 
 
-python3.10 -m pip install --upgrade pip
+echo "Проверка версии Python..."
+python3.10 --version
 
 
-rm /tmp/get-pip.py
+echo "Проверка версии pip..."
+pip3 --version
+
+echo "Проверка локали..."
+locale | grep LANG
+
+echo "Установка завершена. Пожалуйста, перезагрузите систему для применения изменений локали."
