@@ -7,6 +7,7 @@ echo "1. Более гибкий выбор имени пользователя 
 echo "2. Использует screen вместо systemd для удобного доступа к консоли бота"
 echo "3. Упрощенная структура без лишних зависимостей и шагов"
 echo "4. Более понятные инструкции в конце установки"
+echo "5. Возможность выбора версии FunPayCardinal"
 echo ""
 
 echo -n "Введите имя пользователя, от имени которого будет запускаться бот: "
@@ -24,6 +25,34 @@ while true; do
 done
 
 distro_version=$(lsb_release -rs)
+
+
+echo "Получаю список доступных версий FunPayCardinal..."
+gh_repo="sidor0912/FunPayCardinal"
+releases=$(curl -sS https://api.github.com/repos/$gh_repo/releases | grep "tag_name" | awk '{print $2}' | sed 's/"//g' | sed 's/,//g')
+if [ -z "$releases" ]; then
+  echo "Не удалось получить список версий с GitHub. Использую последнюю версию по умолчанию."
+  use_latest="true"
+else
+  echo "Доступные версии FunPayCardinal:"
+  versions=($releases)
+  for i in "${!versions[@]}"; do
+    echo "$i) ${versions[$i]}"
+  done
+  echo "latest) Последняя версия (по умолчанию)"
+  
+  echo -n "Выберите версию (введите номер или 'latest'): "
+  read version_choice
+  if [[ "$version_choice" == "latest" || -z "$version_choice" ]]; then
+    use_latest="true"
+  elif [[ "$version_choice" =~ ^[0-9]+$ && $version_choice -ge 0 && $version_choice -lt ${#versions[@]} ]]; then
+    selected_version=${versions[$version_choice]}
+    echo "Выбрана версия: $selected_version"
+  else
+    echo "Неверный выбор. Использую последнюю версию по умолчанию."
+    use_latest="true"
+  fi
+fi
 
 echo "Добавляю репозитории..."
 if ! sudo apt update ; then
@@ -141,8 +170,11 @@ if ! sudo mkdir /home/"$username"/fpc-install ; then
   exit 2
 fi
 
-gh_repo="sidor0912/FunPayCardinal"
-LOCATION=$(curl -sS https://api.github.com/repos/$gh_repo/releases/latest | grep "zipball_url" | awk '{ print $2 }' | sed 's/,$//' | sed 's/"//g' )
+if [ "$use_latest" == "true" ]; then
+  LOCATION=$(curl -sS https://api.github.com/repos/$gh_repo/releases/latest | grep "zipball_url" | awk '{ print $2 }' | sed 's/,$//' | sed 's/"//g')
+else
+  LOCATION=$(curl -sS https://api.github.com/repos/$gh_repo/releases | grep -B 10 "\"tag_name\": \"$selected_version\"" | grep "zipball_url" | awk '{ print $2 }' | sed 's/,$//' | sed 's/"//g')
+fi
 
 if ! sudo curl -L "$LOCATION" -o /home/"$username"/fpc-install/fpc.zip ; then
   echo "Произошла ошибка при загрузке архива."
